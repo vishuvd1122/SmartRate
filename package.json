@@ -1,0 +1,12 @@
+{
+  "name": "smartrate",
+  "version": "0.1.0",
+  "description": "Pluggable rate limiter library",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "keywords": ["rate-limiter", "rate-limit"],
+  "author": "",
+  "license": "MIT"
+}

@@ -50,15 +50,24 @@ class FixedWindow {
             // check the limit of the requests.
 
             const allowedLimit = this.limit;
-            if (state.count < allowedLimit){
-                // allowed request and update the count in state
-                
-
-            }
 
             if (state.count >= allowedLimit){
-
+                return{
+                    allowed: false,
+                    limit: this.limit,
+                    remaining: 0, 
+                    resetAt: state.windowStart + this.window
+                }
             }
+
+            state.count++;
+            this.store.set(identifier, state);
+            return {
+                allowed: true,
+                limit: this.limit,
+                remaining: this.limit - state.count,
+                resetAt: state.windowStart + this.window
+            };
 
         }
     }

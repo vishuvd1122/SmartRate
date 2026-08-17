@@ -2,7 +2,7 @@ class FixedWindow {
     constructor(options, storage) {
         this.limit = options.limit;
         this.window = options.window; //window size
-        this.store = store
+        this.store = storage
     }
 
 
@@ -13,8 +13,8 @@ class FixedWindow {
         // if the user's ip is not present in the map.
         if (state === undefined){
             const newState = {
-                count = 1,
-                windowStart = now
+                count : 1,
+                windowStart : now
             }
             this.store.set (identifier,newState)
 
@@ -72,3 +72,6 @@ class FixedWindow {
         }
     }
 }
+
+
+module.exports = FixedWindow

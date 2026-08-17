@@ -4,9 +4,25 @@
   "description": "Pluggable rate limiter library",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "echo \"No tests configured\" && exit 0",
+    "dev" : "nodemon index.js"
   },
-  "keywords": ["rate-limiter", "rate-limit"],
+  "keywords": [
+    "rate-limiter",
+    "rate-limit"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vishuvd1122/SmartRate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vishuvd1122/SmartRate/issues"
+  },
+  "homepage": "https://github.com/vishuvd1122/SmartRate#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
 }

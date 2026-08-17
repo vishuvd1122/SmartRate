@@ -1,5 +1,34 @@
 class FixedWindow {
     constructor(options, storage) {
+
+
+if (!options || typeof options !== "object") {
+            throw new Error("options must be an object");
+        }
+
+        const { limit, window } = options;
+
+        if (!Number.isInteger(limit) || limit <= 0) {
+            throw new Error(
+                "limit must be a positive integer"
+            );
+        }
+
+        if (!Number.isFinite(window) || window <= 0) {
+            throw new Error(
+                "window must be a positive number"
+            );
+        }
+
+        if (
+            !storage ||
+            typeof storage.get !== "function" ||
+            typeof storage.set !== "function"
+        ) {
+            throw new Error(
+                "storage must implement get() and set()"
+            );
+        }
         this.limit = options.limit;
         this.window = options.window; //window size
         this.store = storage

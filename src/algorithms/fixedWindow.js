@@ -1,5 +1,7 @@
+const SystemClock = require("../clock/systemClock.js");
+
 class FixedWindow {
-    constructor(options, storage) {
+    constructor(options, storage, clock = new SystemClock()) {
 
 
 if (!options || typeof options !== "object") {
@@ -29,14 +31,23 @@ if (!options || typeof options !== "object") {
                 "storage must implement get() and set()"
             );
         }
+        if (
+            !clock ||
+            typeof clock.now !== "function"
+        ) {
+            throw new Error(
+                "clock must implement now()"
+            );
+        }
         this.limit = options.limit;
         this.window = options.window; //window size
         this.store = storage
+        this.clock = clock
     }
 
 
     async check (identifier){
-        const now = Date.now();
+        const now = this.clock.now();
         const state = this.store.get(identifier);
 
         // if the user's ip is not present in the map.

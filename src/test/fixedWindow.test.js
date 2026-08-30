@@ -292,3 +292,31 @@ test("reset time should be calculated correctly", async () => {
         1060000
     );
 });
+
+
+test("concurrent requests should be handled atomically without exceeding limit", async () => {
+    const store = new MemoryStore();
+    const clock = new FakeClock(1000000);
+
+    const limiter = new FixedWindow(
+        {
+            limit: 5,
+            window: 60000
+        },
+        store,
+        clock
+    );
+
+    // Fire 20 concurrent requests simultaneously
+    const promises = Array.from({ length: 20 }, () => limiter.check("concurrent-client"));
+    const results = await Promise.all(promises);
+
+    const allowedCount = results.filter((r) => r.allowed).length;
+    const blockedCount = results.filter((r) => !r.allowed).length;
+
+    assert.strictEqual(allowedCount, 5);
+    assert.strictEqual(blockedCount, 15);
+
+    const state = await store.get("concurrent-client");
+    assert.strictEqual(state.count, 5);
+});

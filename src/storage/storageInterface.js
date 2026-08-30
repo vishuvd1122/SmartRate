@@ -21,6 +21,10 @@ class StorageInterface {
     throw new Error('Not implemented');
   }
 
+  async mutate(key, reducerFn, ttlMs) {
+    throw new Error('Not implemented');
+  }
+
   async update(key, updaterFn, ttlMs) {
     throw new Error('Not implemented');
   }
@@ -31,4 +35,5 @@ class StorageInterface {
 }
 
 module.exports = StorageInterface;
+
 

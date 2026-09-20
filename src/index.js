@@ -1,25 +1,35 @@
 const express = require("express");
 
 const MemoryStore = require("./storage/memoryStore.js");
-const FixedWindow = require("./algorithms/fixedWindow.js");
+const FixedWindow = require("./algorithms/fixedWindow.js")
+const TokenBucket = require("./algorithms/tokenBucket.js");
 const RateLimiter = require("./middleware/rateLimiter.js");
-const router = express.Router();
 
 const app = express();
 app.use(express.json());
 
+// 1. Initialize In-Memory Storage
 const store = new MemoryStore();
 
-const algorithm = new FixedWindow(
+
+const tokenBucket = new TokenBucket(
   {
-    limit: 5,
-    window: 60000,
+    capacity: 5,
+    refillRate: 0.5, // 1 token per second
   },
-  store,
+  store
 );
 
-const rateLimiter = new RateLimiter(algorithm);
+const fixedWindow = new FixedWindow(
+  {
+    limit: 5,
+    window: 60000, 
+  },
+  store
+);
 
+// 3. Attach RateLimiter middleware
+const rateLimiter = new RateLimiter(tokenBucket);
 app.use(rateLimiter.middleware());
 
 app.get("/", (req, res) => {
@@ -29,6 +39,8 @@ app.get("/", (req, res) => {
   });
 });
 
-app.listen(6969, () => {
-  console.log("Server is running on port 6969");
+const PORT = process.env.PORT || 6969;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
+

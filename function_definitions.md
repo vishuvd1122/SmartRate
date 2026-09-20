@@ -1,4 +1,4 @@
-﻿# SmartRate Function Definitions & Architecture Reference
+# SmartRate Function Definitions & Architecture Reference
 
 This document provides a comprehensive reference of **all functions, methods, and constructors** implemented across the **SmartRate** codebase.
 
@@ -122,21 +122,33 @@ For every function, it details:
 
 ---
 
-### `TokenBucket.constructor(rate, capacity)`
+### `TokenBucket.constructor(options, storage, clock)`
 * **Defined In:** `src/algorithms/tokenBucket.js`
-* **Called By / Used In:** Token Bucket tests / instantiation.
-* **Use & Purpose:** Initializes the placeholder Token Bucket instance with refill rate and token capacity.
-* **Why It Is Important:** Represents the scaffold for token-bucket rate limiting.
-* **Position in Request Flow:** **Setup Phase.**
+* **Called By / Used In:** Application setup code, tests, factory.
+* **Use & Purpose:** Initializes TokenBucket instance by validating `capacity` (positive integer) and resolving `refillRatePerMs` from options (`refillRate`, `tokensPerInterval`/`interval`, or `window`). Calls `super(options, storage, clock)`.
+* **Why It Is Important:** Configures bucket capacity and refill rate while inheriting storage coordination and validation from `BaseAlgorithm`.
+* **Position in Request Flow:** **Setup Phase (Initialization).**
 
 ---
 
-### `TokenBucket.prototype.allow(key)`
+### `TokenBucket.prototype.getTtlMs(now)`
 * **Defined In:** `src/algorithms/tokenBucket.js`
-* **Called By / Used In:** Direct placeholder calls.
-* **Use & Purpose:** Returns `{ allowed: true }`.
-* **Why It Is Important:** Scaffold placeholder method.
-* **Position in Request Flow:** Runtime evaluation (placeholder).
+* **Called By / Used In:** `BaseAlgorithm.prototype.check()`.
+* **Use & Purpose:** Calculates the key's TTL as `Math.ceil(this.capacity / this.refillRatePerMs)`, representing the maximum time needed for an empty bucket to refill completely to capacity.
+* **Why It Is Important:** Prevents premature key eviction from storage when refill rates are slower than the default 60 seconds.
+* **Position in Request Flow:** **Runtime Phase (Pre-Storage Mutation).**
+
+---
+
+### `TokenBucket.prototype.compute(state, now)`
+* **Defined In:** `src/algorithms/tokenBucket.js`
+* **Called By / Used In:** Executed inside `store.mutate()` callback during `BaseAlgorithm.prototype.check()`.
+* **Use & Purpose:** Pure mathematical reducer for Token Bucket:
+  1. Computes refilled tokens: `tokens + elapsedMs * refillRatePerMs` (capped at `capacity`).
+  2. If `tokens < 1`: returns `allowed: false, remaining: 0`, and calculates `resetAt` when 1 token will be available.
+  3. If `tokens >= 1`: consumes 1 token (`tokens - 1`), returns `allowed: true, remaining: floor(nextTokens)`, and calculates `resetAt` when the bucket will be completely full.
+* **Why It Is Important:** Core mathematical logic for token bucket rate limiting. Pure and side-effect free, guaranteeing atomic execution inside `store.mutate()`.
+* **Position in Request Flow:** **Runtime Phase (Evaluation Execution).**
 
 ---
 

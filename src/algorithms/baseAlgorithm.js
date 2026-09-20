@@ -31,7 +31,6 @@ class BaseAlgorithm {
   async check(identifier) {
     const now = this.clock.now();
     const ttlMs = this.getTtlMs(now);
-
     // 1. If store supports atomic mutate (standard)
     if (typeof this.store.mutate === "function") {
       return this.store.mutate(

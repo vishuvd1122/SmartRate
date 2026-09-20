@@ -44,6 +44,7 @@ class MemoryStore extends StorageInterface {
     if (nextState !== undefined) {
       this.data.set(key, nextState);
       if (ttlMs) {
+        // Set a timeout to delete the key after ttlMs milliseconds, but only if the state hasn't changed in the meantime
         setTimeout(() => {
           if (this.data.get(key) === nextState) {
             this.data.delete(key);

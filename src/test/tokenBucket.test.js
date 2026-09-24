@@ -1,4 +1,4 @@
-﻿const test = require("node:test");
+const test = require("node:test");
 const assert = require("node:assert");
 
 const MemoryStore = require("../storage/memoryStore");
@@ -213,4 +213,57 @@ test("should reject invalid capacity and refillRate options", () => {
     assert.throws(() => {
         new TokenBucket({ capacity: 5, refillRate: 0 }, store);
     });
+
+    assert.throws(() => {
+        new TokenBucket({ capacity: 5, cost: 0 }, store);
+    });
+
+    assert.throws(() => {
+        new TokenBucket({ capacity: 5, cost: -1 }, store);
+    });
+
+    assert.throws(() => {
+        new TokenBucket({ capacity: 5, cost: 6 }, store); // cost > capacity
+    });
 });
+
+test("should support weighted tokens with static cost option", async () => {
+    const store = new MemoryStore();
+    const clock = new FakeClock(1000000);
+
+    const limiter = new TokenBucket(
+        {
+            capacity: 5,
+            refillRate: 1, // 1 token per 1000ms
+            cost: 2        // each request costs 2 tokens
+        },
+        store,
+        clock
+    );
+
+    // Request 1: 5 tokens available, costs 2 -> allowed, 3 remaining
+    const r1 = await limiter.check("client-weighted");
+    assert.strictEqual(r1.allowed, true);
+    assert.strictEqual(r1.remaining, 3);
+
+    // Request 2: 3 tokens available, costs 2 -> allowed, 1 remaining
+    const r2 = await limiter.check("client-weighted");
+    assert.strictEqual(r2.allowed, true);
+    assert.strictEqual(r2.remaining, 1);
+
+    // Request 3: 1 token available, but costs 2 -> BLOCKED
+    const r3 = await limiter.check("client-weighted");
+    assert.strictEqual(r3.allowed, false);
+    assert.strictEqual(r3.remaining, 1);
+    // Needs 1 more token to reach cost of 2 -> 1000 ms wait
+    assert.strictEqual(r3.resetAt, 1000000 + 1000);
+
+    // Advance clock by 1000 ms -> 1 token refilled, total tokens = 2
+    clock.advance(1000);
+
+    // Request 4: now 2 tokens available, costs 2 -> allowed, 0 remaining
+    const r4 = await limiter.check("client-weighted");
+    assert.strictEqual(r4.allowed, true);
+    assert.strictEqual(r4.remaining, 0);
+});
+

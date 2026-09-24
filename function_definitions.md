@@ -125,8 +125,8 @@ For every function, it details:
 ### `TokenBucket.constructor(options, storage, clock)`
 * **Defined In:** `src/algorithms/tokenBucket.js`
 * **Called By / Used In:** Application setup code, tests, factory.
-* **Use & Purpose:** Initializes TokenBucket instance by validating `capacity` (positive integer) and resolving `refillRatePerMs` from options (`refillRate`, `tokensPerInterval`/`interval`, or `window`). Calls `super(options, storage, clock)`.
-* **Why It Is Important:** Configures bucket capacity and refill rate while inheriting storage coordination and validation from `BaseAlgorithm`.
+* **Use & Purpose:** Initializes TokenBucket instance by validating `capacity` (positive integer), `cost` (positive integer $\le$ capacity, defaulting to 1), and resolving `refillRatePerMs` from options (`refillRate`, `tokensPerInterval`/`interval`, or `window`). Calls `super(options, storage, clock)`.
+* **Why It Is Important:** Configures bucket capacity, refill rate, and static token cost per request while inheriting storage coordination and validation from `BaseAlgorithm`.
 * **Position in Request Flow:** **Setup Phase (Initialization).**
 
 ---
@@ -145,9 +145,9 @@ For every function, it details:
 * **Called By / Used In:** Executed inside `store.mutate()` callback during `BaseAlgorithm.prototype.check()`.
 * **Use & Purpose:** Pure mathematical reducer for Token Bucket:
   1. Computes refilled tokens: `tokens + elapsedMs * refillRatePerMs` (capped at `capacity`).
-  2. If `tokens < 1`: returns `allowed: false, remaining: 0`, and calculates `resetAt` when 1 token will be available.
-  3. If `tokens >= 1`: consumes 1 token (`tokens - 1`), returns `allowed: true, remaining: floor(nextTokens)`, and calculates `resetAt` when the bucket will be completely full.
-* **Why It Is Important:** Core mathematical logic for token bucket rate limiting. Pure and side-effect free, guaranteeing atomic execution inside `store.mutate()`.
+  2. If `tokens < this.cost`: returns `allowed: false, remaining: floor(tokens)`, and calculates `resetAt` when enough tokens (`this.cost - tokens`) will be available.
+  3. If `tokens >= this.cost`: consumes `this.cost` tokens (`tokens - this.cost`), returns `allowed: true, remaining: floor(nextTokens)`, and calculates `resetAt` when the bucket will be completely full.
+* **Why It Is Important:** Core mathematical logic for token bucket rate limiting with support for weighted tokens. Pure and side-effect free, guaranteeing atomic execution inside `store.mutate()`.
 * **Position in Request Flow:** **Runtime Phase (Evaluation Execution).**
 
 ---

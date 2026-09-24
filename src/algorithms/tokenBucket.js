@@ -39,8 +39,19 @@ class TokenBucket extends BaseAlgorithm {
       throw new Error("refill rate must be a positive number");
     }
 
+    const cost = options.cost !== undefined ? options.cost : 1;
+
+    if (!Number.isInteger(cost) || cost <= 0) {
+      throw new Error("cost must be a positive integer");
+    }
+
+    if (cost > capacity) {
+      throw new Error("cost cannot exceed bucket capacity");
+    }
+
     this.capacity = capacity;
     this.refillRatePerMs = refillRatePerMs;
+    this.cost = cost;
   }
 
   /**
@@ -72,10 +83,10 @@ class TokenBucket extends BaseAlgorithm {
       lastRefill = now;
     }
 
-    // Check if at least 1 token is available
-    if (tokens < 1) {
-      const msUntilNextToken = Math.ceil((1 - tokens) / this.refillRatePerMs);
-      const resetAt = now + msUntilNextToken;
+    // Check if enough tokens are available for this request's cost
+    if (tokens < this.cost) {
+      const msUntilTokensAvailable = Math.ceil((this.cost - tokens) / this.refillRatePerMs);
+      const resetAt = now + msUntilTokensAvailable;
 
       return {
         nextState: {
@@ -85,14 +96,14 @@ class TokenBucket extends BaseAlgorithm {
         result: {
           allowed: false,
           limit: this.capacity,
-          remaining: 0,
+          remaining: Math.floor(tokens),
           resetAt,
         },
       };
     }
 
-    // Request is allowed: consume 1 token
-    const nextTokens = tokens - 1;
+    // Request is allowed: consume `this.cost` tokens
+    const nextTokens = tokens - this.cost;
     const msUntilFull = Math.ceil((this.capacity - nextTokens) / this.refillRatePerMs);
     const resetAt = now + msUntilFull;
 

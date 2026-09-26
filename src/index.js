@@ -4,6 +4,7 @@ const MemoryStore = require("./storage/memoryStore.js");
 const FixedWindow = require("./algorithms/fixedWindow.js")
 const TokenBucket = require("./algorithms/tokenBucket.js");
 const RateLimiter = require("./middleware/rateLimiter.js");
+const SlidingWindowLog = require ("./algorithms/slidingWindowLog.js")
 
 const app = express();
 app.use(express.json());
@@ -28,8 +29,19 @@ const fixedWindow = new FixedWindow(
   store
 );
 
+
+const slidingWindowLog = new SlidingWindowLog(
+  {
+    limit: 5,
+    window: 60000, 
+  },
+  store
+);
+
+
+
 // 3. Attach RateLimiter middleware
-const rateLimiter = new RateLimiter(tokenBucket);
+const rateLimiter = new RateLimiter(slidingWindowLog);
 app.use(rateLimiter.middleware());
 
 app.get("/", (req, res) => {

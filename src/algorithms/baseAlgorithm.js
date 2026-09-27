@@ -1,4 +1,4 @@
-﻿const SystemClock = require("../clock/systemClock");
+const SystemClock = require("../clock/systemClock");
 
 class BaseAlgorithm {
   constructor(options = {}, storage, clock = new SystemClock()) {
@@ -35,8 +35,9 @@ class BaseAlgorithm {
     if (typeof this.store.mutate === "function") {
       return this.store.mutate(
         identifier,
-        (currentState) => this.compute(currentState, now),
-        ttlMs
+        (currentState, logicalNow) => this.compute(currentState, logicalNow !== undefined ? logicalNow : now),
+        ttlMs,
+        now
       );
     }
 
@@ -44,11 +45,12 @@ class BaseAlgorithm {
     if (typeof this.store.update === "function") {
       const updateRes = await this.store.update(
         identifier,
-        (currentState) => {
-          const res = this.compute(currentState, now);
+        (currentState, logicalNow) => {
+          const res = this.compute(currentState, logicalNow !== undefined ? logicalNow : now);
           return { state: res.nextState, result: res.result };
         },
-        ttlMs
+        ttlMs,
+        now
       );
       return updateRes.result || updateRes;
     }

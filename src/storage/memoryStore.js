@@ -37,9 +37,10 @@ class MemoryStore extends StorageInterface {
    * @param {number} [ttlMs]
    * @returns {Promise<any>}
    */
-  async mutate(key, reducerFn, ttlMs) {
+  async mutate(key, reducerFn, ttlMs, explicitNow) {
+    const now = typeof explicitNow === "number" ? explicitNow : Date.now();
     const current = this.data.get(key) || null;
-    const { nextState, result } = reducerFn(current);
+    const { nextState, result } = reducerFn(current, now);
 
     if (nextState !== undefined) {
       this.data.set(key, nextState);
@@ -59,9 +60,10 @@ class MemoryStore extends StorageInterface {
   /**
    * Alias for mutate / update support
    */
-  async update(key, updaterFn, ttlMs) {
+  async update(key, updaterFn, ttlMs, explicitNow) {
+    const now = typeof explicitNow === "number" ? explicitNow : Date.now();
     const current = this.data.get(key);
-    const result = updaterFn(current);
+    const result = updaterFn(current, now);
 
     if (result && result.state !== undefined) {
       this.data.set(key, result.state);

@@ -21,7 +21,7 @@ class StorageInterface {
     throw new Error('Not implemented');
   }
 
-  async mutate(key, reducerFn, ttlMs) {
+  async mutate(key, reducerFn, ttlMs, now) {
     throw new Error('Not implemented');
   }
 

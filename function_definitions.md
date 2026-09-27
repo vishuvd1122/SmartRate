@@ -316,9 +316,9 @@ For every function, it details:
 
 ### `RedisStore.prototype.increment(key, amount, ttlMs)`
 * **Defined In:** `src/storage/redisStore.js`
-* **Called By / Used In:** Numeric atomic increments across distributed nodes.
-* **Use & Purpose:** Uses Redis `MULTI` / `INCRBY` / `PEXPIRE` / `EXEC` pipeline to increment a key and set TTL atomically.
-* **Why It Is Important:** Safe atomic integer counter across multiple servers.
+* **Called By / Used In:** Numeric atomic counter increments across distributed nodes.
+* **Use & Purpose:** Executes connection-isolated Optimistic Concurrency Control (`WATCH` / `GET` + `PTTL` / `MULTI` / `SET` / `EXEC`). If the key is newly created, it sets the initial value and applies `ttlMs`. If the key already exists, it increments the numeric value while strictly preserving the remaining TTL. Rejects non-numeric stored data or arguments with `StorageError`. Retries on contention up to `maxRetries`.
+* **Why It Is Important:** Provides safe, atomic distributed integer counting with non-refreshing TTL semantics.
 * **Position in Request Flow:** Runtime.
 
 ---
@@ -326,17 +326,17 @@ For every function, it details:
 ### `RedisStore.prototype.mutate(key, reducerFn, ttlMs)`
 * **Defined In:** `src/storage/redisStore.js`
 * **Called By / Used In:** `BaseAlgorithm.prototype.check()`.
-* **Use & Purpose:** Fetches JSON state from Redis, passes it to `reducerFn()`, and saves the serialized `nextState` with optional TTL.
-* **Why It Is Important:** Distributed implementation of the state-machine reducer.
+* **Use & Purpose:** Connection-isolated Optimistic Concurrency Control (`WATCH / GET / compute / MULTI / SET / EXEC`). Executes the pure JavaScript `reducerFn` against stored JSON state. Catches and bubbles reducer errors directly without wrapping in `StorageError`; retries on contention collisions up to `maxRetries`; throws `ConcurrencyContentionError` if contention budget is exhausted. Enforces strict JSON serialization, rejecting BigInt, Symbol, Function, or circular structures with `StorageError`.
+* **Why It Is Important:** Distributed single-source-of-truth implementation of the Atomic Reducer Pattern without duplicating algorithm logic in Redis Lua.
 * **Position in Request Flow:** **Runtime Phase (State Transition).**
 
 ---
 
 ### `RedisStore.prototype.eval(script, keys, args)`
 * **Defined In:** `src/storage/redisStore.js`
-* **Called By / Used In:** Custom Lua script executions.
-* **Use & Purpose:** Executes Redis `EVAL` with keys and arguments.
-* **Why It Is Important:** Allows executing transactional Redis Lua scripts directly on the Redis single-threaded engine.
+* **Called By / Used In:** Optional custom Redis script executions.
+* **Use & Purpose:** Executes Redis `EVAL` with keys and arguments, applying the configured prefix to keys.
+* **Why It Is Important:** Allows executing transactional Redis scripts if needed.
 * **Position in Request Flow:** Advanced runtime operations.
 
 ---

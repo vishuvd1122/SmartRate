@@ -1,4 +1,5 @@
 const SystemClock = require("../clock/systemClock");
+const { StorageError } = require("../errors/errors");
 
 class RateLimiter {
   constructor(algorithm, options = {}) {
@@ -6,8 +7,11 @@ class RateLimiter {
       throw new Error("algorithm must implement check()");
     }
 
-    const { keyGenerator = (req) => req.ip, clock = new SystemClock() } =
-      options;
+    const {
+      keyGenerator = (req) => req.ip,
+      clock = new SystemClock(),
+      failOpen = false,
+    } = options;
 
     if (typeof keyGenerator !== "function") {
       throw new Error("keyGenerator must be a function");
@@ -20,6 +24,7 @@ class RateLimiter {
     this.algorithm = algorithm;
     this.keyGenerator = keyGenerator;
     this.clock = clock;
+    this.failOpen = failOpen === true;
   }
 
   middleware() {
@@ -47,6 +52,18 @@ class RateLimiter {
 
         next();
       } catch (error) {
+        const isFailOpen =
+          this.failOpen ||
+          this.algorithm?.options?.failOpen ||
+          this.algorithm?.store?.failOpen;
+
+        if (isFailOpen && error instanceof StorageError) {
+          if (res && typeof res.setHeader === "function") {
+            res.setHeader("X-RateLimit-Degraded", "true");
+          }
+          return next();
+        }
+
         next(error);
       }
     };

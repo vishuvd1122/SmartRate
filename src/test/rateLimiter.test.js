@@ -665,3 +665,36 @@ test("allowed request should receive rate-limit headers", async () => {
         1060
     );
 });
+
+test("RateLimiter.getClientIp should normalize IPv4, IPv6 localhost, and proxies", () => {
+    assert.strictEqual(RateLimiter.getClientIp({ ip: "192.168.1.1" }), "192.168.1.1");
+    assert.strictEqual(RateLimiter.getClientIp({ ip: "::1" }), "127.0.0.1");
+    assert.strictEqual(RateLimiter.getClientIp({ ip: "::ffff:127.0.0.1" }), "127.0.0.1");
+    assert.strictEqual(
+        RateLimiter.getClientIp({ headers: { "x-forwarded-for": "203.0.113.195, 70.41.3.18" } }),
+        "203.0.113.195"
+    );
+    assert.strictEqual(RateLimiter.getClientIp(null), "127.0.0.1");
+});
+
+test("RateLimiter keyGenerator properly generates rateLimit:user:<ip> format", async () => {
+    let capturedKey = null;
+    const algorithm = {
+        check: async (key) => {
+            capturedKey = key;
+            return { allowed: true, limit: 5, remaining: 4, resetAt: 1060000 };
+        }
+    };
+
+    const limiter = new RateLimiter(algorithm, {
+        keyGenerator: (req) => `rateLimit:user:${RateLimiter.getClientIp(req)}`
+    });
+
+    const middleware = limiter.middleware();
+    const req = { ip: "::ffff:10.0.0.1" };
+    const res = createResponse();
+
+    await middleware(req, res, () => {});
+
+    assert.strictEqual(capturedKey, "rateLimit:user:10.0.0.1");
+});

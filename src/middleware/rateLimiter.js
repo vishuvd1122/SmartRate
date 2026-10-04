@@ -76,6 +76,34 @@ class RateLimiter {
 
     res.setHeader("X-RateLimit-Reset", Math.ceil(result.resetAt / 1000));
   }
+
+  /**
+   * Helper utility to extract and clean client IP address across
+   * proxies, IPv6 loopback (::1), and IPv4-mapped IPv6 (::ffff:127.0.0.1).
+   *
+   * @param {Object} req - Express request object
+   * @returns {string} Sanitized client IP address
+   */
+  static getClientIp(req) {
+    if (!req) return "127.0.0.1";
+    let ip =
+      req.ip ||
+      (req.headers && req.headers["x-forwarded-for"]) ||
+      req.socket?.remoteAddress ||
+      "127.0.0.1";
+
+    if (typeof ip === "string") {
+      if (ip.includes(",")) {
+        ip = ip.split(",")[0].trim();
+      }
+      if (ip === "::1") {
+        ip = "127.0.0.1";
+      } else if (ip.startsWith("::ffff:")) {
+        ip = ip.replace("::ffff:", "");
+      }
+    }
+    return ip;
+  }
 }
 
 module.exports = RateLimiter;

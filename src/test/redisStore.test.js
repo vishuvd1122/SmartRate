@@ -1632,5 +1632,50 @@ test("RedisStore eval: executes script with dual client signature compatibility 
   assert.strictEqual(modeCalled, "ioredis");
 });
 
+test("RedisStore: correctly formats TTL for node-redis ({ PX }) and ioredis ('PX', ttlMs)", async () => {
+  let capturedNodeRedisOptions = null;
+  const nodeRedisClient = {
+    async executeIsolated(fn) {
+      return fn({
+        async watch() { return "OK"; },
+        async get() { return null; },
+        multi() {
+          return {
+            set(k, v, options) { capturedNodeRedisOptions = options; },
+            async exec() { return ["OK"]; }
+          };
+        },
+        async unwatch() { return "OK"; }
+      });
+    }
+  };
+
+  const store1 = new RedisStore(nodeRedisClient);
+  await store1.mutate("testKey", () => ({ nextState: { a: 1 }, result: true }), 15000);
+  assert.deepStrictEqual(capturedNodeRedisOptions, { PX: 15000 });
+
+  let capturedIoredisArgs = [];
+  const ioredisClient = {
+    duplicate() {
+      return {
+        async watch() { return "OK"; },
+        async get() { return null; },
+        multi() {
+          return {
+            set(k, v, ...args) { capturedIoredisArgs = args; },
+            async exec() { return ["OK"]; }
+          };
+        },
+        async unwatch() { return "OK"; },
+        async quit() { return "OK"; }
+      };
+    }
+  };
+
+  const store2 = new RedisStore(ioredisClient);
+  await store2.mutate("testKey", () => ({ nextState: { a: 1 }, result: true }), 25000);
+  assert.deepStrictEqual(capturedIoredisArgs, ["PX", 25000]);
+});
+
 
 

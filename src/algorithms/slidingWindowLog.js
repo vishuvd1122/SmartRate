@@ -91,9 +91,6 @@ class SlidingWindowLog extends BaseAlgorithm {
     // Reset time for allowed requests: when the oldest timestamp in the log will expire
     const resetAt = updatedTimestamps[0] + this.window;
 
-    console.log(updatedTimestamps);
-    
-
     return {
       nextState: {
         timestamps: updatedTimestamps,

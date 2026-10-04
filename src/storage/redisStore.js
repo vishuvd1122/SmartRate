@@ -140,6 +140,37 @@ class RedisStore extends StorageInterface {
     }
   }
 
+  /**
+   * Dispatches a SET command with TTL to either node-redis (v4+) or ioredis.
+   * - In node-redis (v4+), options are passed as an object: `{ PX: ttlMs }`.
+   * - In ioredis, arguments are passed as positional strings: `'PX', ttlMs`.
+   *
+   * @param {Object} clientOrMulti - Redis client or MULTI pipeline
+   * @param {string} key - Resolved storage key
+   * @param {string} value - Serialized value string
+   * @param {number} [ttlMs] - Time-to-live in milliseconds
+   */
+  _applySet(clientOrMulti, key, value, ttlMs) {
+    if (!ttlMs || ttlMs <= 0) {
+      return clientOrMulti.set(key, value);
+    }
+
+    const roundedTtl = Math.ceil(ttlMs);
+
+    // Detect node-redis (v4+) via executeIsolated or connection state properties
+    const isNodeRedis =
+      typeof this.client.executeIsolated === "function" ||
+      this.client.isOpen !== undefined ||
+      this.client.isReady !== undefined;
+
+    if (isNodeRedis) {
+      return clientOrMulti.set(key, value, { PX: roundedTtl });
+    }
+
+    // Default / ioredis style
+    return clientOrMulti.set(key, value, "PX", roundedTtl);
+  }
+
   async set(key, value, ttlMs) {
     this._ensureClient();
     if (value === undefined) {
@@ -148,10 +179,7 @@ class RedisStore extends StorageInterface {
     const resolvedKey = this._resolveKey(key);
     const strVal = this._serialize(value, key);
     try {
-      if (ttlMs && ttlMs > 0) {
-        return await this.client.set(resolvedKey, strVal, "PX", ttlMs);
-      }
-      return await this.client.set(resolvedKey, strVal);
+      return await this._applySet(this.client, resolvedKey, strVal, ttlMs);
     } catch (err) {
       if (err instanceof StorageError) throw err;
       throw new StorageError(`Failed to set key "${key}" in Redis`, err);
@@ -213,11 +241,7 @@ class RedisStore extends StorageInterface {
             if (raw === null || raw === undefined) {
               // Key does not exist
               nextVal = amount;
-              if (ttlMs && ttlMs > 0) {
-                multi.set(resolvedKey, String(nextVal), "PX", ttlMs);
-              } else {
-                multi.set(resolvedKey, String(nextVal));
-              }
+              this._applySet(multi, resolvedKey, String(nextVal), ttlMs);
             } else {
               // Key exists: validate numeric content and increment using native INCRBY
               // INCRBY strictly preserves the existing expiration deadline (zero TTL drift)
@@ -313,11 +337,7 @@ class RedisStore extends StorageInterface {
             const strVal = this._serialize(nextState, key);
 
             const multi = isolatedClient.multi();
-            if (ttlMs && ttlMs > 0) {
-              multi.set(resolvedKey, strVal, "PX", ttlMs);
-            } else {
-              multi.set(resolvedKey, strVal);
-            }
+            this._applySet(multi, resolvedKey, strVal, ttlMs);
 
             const execResult = await multi.exec();
 

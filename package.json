@@ -23,7 +23,8 @@
   "homepage": "https://github.com/vishuvd1122/SmartRate#readme",
   "dependencies": {
     "express": "^5.2.1",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "redis": "^6.3.0"
   },
   "devDependencies": {
     "supertest": "^7.2.2"

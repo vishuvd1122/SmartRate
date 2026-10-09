@@ -1,10 +1,13 @@
 const express = require("express");
 const { createClient } = require("redis");
 
+const rateLimit = require("./rateLimit.js");
 const RedisStore = require("./storage/redisStore.js");
+const MemoryStore = require("./storage/memoryStore.js");
 const FixedWindow = require("./algorithms/fixedWindow.js");
 const TokenBucket = require("./algorithms/tokenBucket.js");
 const SlidingWindowLog = require("./algorithms/slidingWindowLog.js");
+const LeakyBucket = require("./algorithms/leakyBucket.js");
 const RateLimiter = require("./middleware/rateLimiter.js");
 
 async function startServer() {
@@ -27,27 +30,14 @@ async function startServer() {
     process.exit(1);
   }
 
-  // 2. Initialize RedisStore with connection isolation
-  const store = new RedisStore(redisClient, {
-    prefix: "rateLimit:",
-    maxRetries: 3,
-    retryDelayMs: 10,
+  // 2. Configure and attach RateLimiter middleware using the rateLimit factory
+  const limiter = rateLimit({
+    redis: redisClient,
+    algorithm: "token-bucket",
+    capacity: 5,
+    refillRate: 0.25, // 1 token every 4 seconds
   });
-
-  // 3. Configure the rate limiting algorithm
-  const tokenBucket = new TokenBucket(
-    {
-      capacity: 5,
-      refillRate: 0.25, // 1 token per second
-    },
-    store
-  );
-
-  // 4. Attach RateLimiter middleware with key format: rateLimit:user:<ip address>
-  const rateLimiter = new RateLimiter(tokenBucket, {
-    keyGenerator: (req) => `rateLimit:user:${RateLimiter.getClientIp(req)}`,
-  });
-  app.use(rateLimiter.middleware());
+  app.use(limiter);
 
   app.get("/", (req, res) => {
     res.json({
@@ -62,4 +52,18 @@ async function startServer() {
   });
 }
 
-startServer();
+// Start server when run directly: `node src/index.js`
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = rateLimit;
+module.exports.rateLimit = rateLimit;
+module.exports.RateLimiter = RateLimiter;
+module.exports.RedisStore = RedisStore;
+module.exports.MemoryStore = MemoryStore;
+module.exports.FixedWindow = FixedWindow;
+module.exports.TokenBucket = TokenBucket;
+module.exports.SlidingWindowLog = SlidingWindowLog;
+module.exports.LeakyBucket = LeakyBucket;
+

@@ -4,13 +4,19 @@
   "description": "High-performance, distributed rate limiter library for Express featuring Atomic Reducers, Redis Optimistic Concurrency Control, and multiple algorithms (Token Bucket, Sliding Window Log, Fixed Window, Leaky Bucket).",
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "src",
     "!src/test",
     "README.md",
-    "LICENSE",
-    "configuration.md",
-    "factoryPattern.md"
+    "LICENSE"
   ],
   "scripts": {
     "test": "node --test \"src/test/**/*.test.js\" \"src/test/**/*.integration.js\"",

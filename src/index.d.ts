@@ -1,4 +1,26 @@
-import { Request, Response, NextFunction } from "express";
+/**
+ * Generic HTTP Request abstraction compatible with Express 4, Express 5, and Node.js http.IncomingMessage
+ */
+export interface RequestLike {
+  ip?: string;
+  headers?: Record<string, string | string[] | undefined>;
+  socket?: { remoteAddress?: string };
+  connection?: { remoteAddress?: string };
+  user?: any;
+  [key: string]: any;
+}
+
+/**
+ * Generic HTTP Response abstraction compatible with Express 4 and Express 5
+ */
+export interface ResponseLike {
+  setHeader(name: string, value: any): any;
+  status(code: number): this;
+  json(body: any): any;
+  [key: string]: any;
+}
+
+export type NextFunctionLike = (err?: any) => void;
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -122,7 +144,7 @@ export class LeakyBucket extends BaseAlgorithm {
 }
 
 export interface RateLimiterOptions {
-  keyGenerator?: (req: Request) => string;
+  keyGenerator?: (req: RequestLike | any) => string;
   clock?: Clock;
   failOpen?: boolean;
 }
@@ -130,10 +152,10 @@ export interface RateLimiterOptions {
 export class RateLimiter {
   constructor(algorithm: BaseAlgorithm, options?: RateLimiterOptions);
   algorithm: BaseAlgorithm;
-  keyGenerator: (req: Request) => string;
+  keyGenerator: (req: RequestLike | any) => string;
   clock: Clock;
   failOpen: boolean;
-  middleware(): (req: Request, res: Response, next: NextFunction) => Promise<void>;
+  middleware(): (req: RequestLike | any, res: ResponseLike | any, next: NextFunctionLike) => Promise<void>;
   static getClientIp(req: any): string;
 }
 
@@ -148,7 +170,7 @@ export interface RateLimitFactoryOptions {
   client?: any;
   store?: StorageInterface;
   prefix?: string;
-  keyGenerator?: (req: Request) => string;
+  keyGenerator?: (req: RequestLike | any) => string;
   failOpen?: boolean;
   cost?: number;
   refillRate?: number;
@@ -159,7 +181,7 @@ export interface RateLimitFactoryOptions {
 }
 
 export interface RateLimitMiddleware {
-  (req: Request, res: Response, next: NextFunction): Promise<void>;
+  (req: RequestLike | any, res: ResponseLike | any, next: NextFunctionLike): Promise<void>;
   limiter: RateLimiter;
   store: StorageInterface;
   algorithm: BaseAlgorithm;
@@ -181,4 +203,3 @@ export class ConcurrencyContentionError extends StorageError {}
 export class SystemClock implements Clock {
   now(): number;
 }
-

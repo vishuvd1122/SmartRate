@@ -6,7 +6,7 @@
 [![coverage](https://img.shields.io/badge/coverage-96.9%25-brightgreen.svg)]()
 [![node](https://img.shields.io/badge/node-%3E%3D18.0.0-orange.svg)]()
 
-**SmartRate** is a high-performance, distributed **Node.js rate limiter** built for Express and modern JavaScript backends. 
+**SmartRate** is a high-performance, production-grade distributed rate limiting library for Express.js. 
 
 It uniquely decouples rate-limiting algorithms from storage engines using the **Atomic Reducer Pattern**, delivering **connection-isolated Optimistic Concurrency Control (OCC)** for Redis without requiring custom Lua scripts or database-level stored procedures.
 

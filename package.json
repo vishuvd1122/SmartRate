@@ -1,7 +1,7 @@
 {
   "name": "smartrate",
   "version": "1.0.0",
-  "description": "High-performance, distributed rate limiter library for Express featuring Atomic Reducers, Redis Optimistic Concurrency Control, and multiple algorithms (Token Bucket, Sliding Window Log, Fixed Window, Leaky Bucket).",
+  "description": "A Node.js rate limiter with fixed window, token bucket, sliding window algorithms, in-memory storage, and Redis-backed distributed rate limiting.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "exports": {
@@ -22,17 +22,21 @@
     "test": "node --test \"src/test/**/*.test.js\" \"src/test/**/*.integration.js\"",
     "dev": "nodemon src/index.js"
   },
+
   "keywords": [
     "rate-limiter",
     "rate-limit",
-    "express",
+    "rate-limiting",
+    "nodejs",
+    "throttle",
     "redis",
+    "distributed-rate-limiter",
     "token-bucket",
+    "fixed-window",
     "sliding-window",
-    "leaky-bucket",
-    "concurrency",
     "middleware"
   ],
+
   "author": "vishuvd1122 <vishu.diwakar_cs22@gla.ac.in>",
   "license": "MIT",
   "engines": {

@@ -1,18 +1,37 @@
 {
   "name": "smartrate",
-  "version": "0.1.0",
-  "description": "Pluggable rate limiter library",
+  "version": "1.0.0",
+  "description": "High-performance, distributed rate limiter library for Express featuring Atomic Reducers, Redis Optimistic Concurrency Control, and multiple algorithms (Token Bucket, Sliding Window Log, Fixed Window, Leaky Bucket).",
   "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src",
+    "!src/test",
+    "README.md",
+    "LICENSE",
+    "configuration.md",
+    "factoryPattern.md"
+  ],
   "scripts": {
     "test": "node --test \"src/test/**/*.test.js\" \"src/test/**/*.integration.js\"",
-    "dev": "nodemon index.js"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [
     "rate-limiter",
-    "rate-limit"
+    "rate-limit",
+    "express",
+    "redis",
+    "token-bucket",
+    "sliding-window",
+    "leaky-bucket",
+    "concurrency",
+    "middleware"
   ],
-  "author": "",
+  "author": "vishuvd1122 <vishu.diwakar_cs22@gla.ac.in>",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vishuvd1122/SmartRate.git"
@@ -21,12 +40,19 @@
     "url": "https://github.com/vishuvd1122/SmartRate/issues"
   },
   "homepage": "https://github.com/vishuvd1122/SmartRate#readme",
-  "dependencies": {
-    "express": "^5.2.1",
-    "nodemon": "^3.1.14",
-    "redis": "^6.3.0"
+  "peerDependencies": {
+    "express": "^4.18.0 || ^5.0.0",
+    "redis": "^4.0.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "redis": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "redis": "^6.3.0",
     "supertest": "^7.2.2"
   }
 }

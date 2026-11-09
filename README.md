@@ -31,7 +31,7 @@ For distributed rate limiting with Redis, install a Redis client (`redis` v4+ or
 
 ```js
 const express = require("express");
-const { rateLimit } = require("smartrate");
+const  rateLimit = require("smartrate");
 
 const app = express();
 
@@ -161,7 +161,7 @@ Example using `redis`:
 ```js
 const express = require("express");
 const { createClient } = require("redis");
-const { rateLimit } = require("smartrate");
+const  rateLimit = require("smartrate");
 
 async function startServer() {
   const app = express();

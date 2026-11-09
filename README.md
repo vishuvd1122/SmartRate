@@ -54,6 +54,26 @@ app.listen(3000, () => {
 
 When a client exceeds the configured limit, SmartRate rejects the request with **HTTP 429 (Too Many Requests)**.
 
+## Configuration
+
+The following are the main options used to configure a limiter:
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `algorithm` | `string` | Algorithm to use: `fixed-window`, `token-bucket`, `sliding-window-log`, or `leaky-bucket`. |
+| `limit` | `number` | Maximum requests allowed in the configured window. Used by window-based algorithms. |
+| `windowMs` | `number` | Rate-limit window duration in milliseconds. |
+| `capacity` | `number` | Maximum bucket capacity for Token Bucket and Leaky Bucket. |
+| `refillRate` | `number` | Tokens added per second for Token Bucket. |
+| `cost` | `number` | Token cost of a request for Token Bucket. |
+| `leakRate` | `number` | Requests drained per second for Leaky Bucket. |
+| `keyGenerator` | `function` | Returns the key used to identify and track a client. |
+| `redis` | Redis client | Redis client used to enable shared storage. |
+| `prefix` | `string` | Prefix for keys stored in Redis. |
+| `maxRetries` | `number` | Maximum retries for Redis optimistic-concurrency conflicts. |
+
+Use the options relevant to the selected algorithm. For example, `limit` and `windowMs` are used by Fixed Window and Sliding Window Log, while `capacity` and `refillRate` configure Token Bucket.
+
 ## Available Algorithms
 
 Choose the algorithm that best matches your endpoint's traffic pattern.
@@ -193,45 +213,6 @@ app.use("/api", userLimiter);
 ```
 
 If your Express application is behind a trusted reverse proxy, configure Express's `trust proxy` setting appropriately so that client IP detection works as expected.
-
-## Configuration
-
-The following are the main options used to configure a limiter:
-
-| Option | Type | Description |
-| --- | --- | --- |
-| `algorithm` | `string` | Algorithm to use: `fixed-window`, `token-bucket`, `sliding-window-log`, or `leaky-bucket`. |
-| `limit` | `number` | Maximum requests allowed in the configured window. Used by window-based algorithms. |
-| `windowMs` | `number` | Rate-limit window duration in milliseconds. |
-| `capacity` | `number` | Maximum bucket capacity for Token Bucket and Leaky Bucket. |
-| `refillRate` | `number` | Tokens added per second for Token Bucket. |
-| `cost` | `number` | Token cost of a request for Token Bucket. |
-| `leakRate` | `number` | Requests drained per second for Leaky Bucket. |
-| `keyGenerator` | `function` | Returns the key used to identify and track a client. |
-| `redis` | Redis client | Redis client used to enable shared storage. |
-| `prefix` | `string` | Prefix for keys stored in Redis. |
-| `maxRetries` | `number` | Maximum retries for Redis optimistic-concurrency conflicts. |
-
-Use the options relevant to the selected algorithm. For example, `limit` and `windowMs` are used by Fixed Window and Sliding Window Log, while `capacity` and `refillRate` configure Token Bucket.
-
-## TypeScript
-
-SmartRate ships with TypeScript declarations. No separate `@types` package is required.
-
-```ts
-import express from "express";
-import { rateLimit } from "smartrate";
-
-const app = express();
-
-const limiter = rateLimit({
-  algorithm: "token-bucket",
-  capacity: 10,
-  refillRate: 1,
-});
-
-app.use("/api", limiter);
-```
 
 ## License
 
